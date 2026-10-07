@@ -2399,6 +2399,7 @@ fn load_riqx_client_defaults() {
             (keys::OPTION_CUSTOM_RENDEZVOUS_SERVER, SERVER),
             (keys::OPTION_RELAY_SERVER, SERVER),
             (keys::OPTION_KEY, KEY),
+            (keys::OPTION_API_SERVER, "https://prd.riqx.one:8443"),
             // An upstream update would replace this build and drop the server above.
             (keys::OPTION_ALLOW_AUTO_UPDATE, "N"),
         ],
