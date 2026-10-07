@@ -2965,6 +2965,9 @@ pub mod server_side {
         if let Ok(home_dir) = env.get_string(&home_dir) {
             *config::APP_HOME_DIR.write().unwrap() = home_dir.into();
         }
+        // RIQX build: the service can start at boot before Flutter's initialize(),
+        // so load our server and defaults here too.
+        crate::load_custom_client();
         if let Ok(custom_client_config) = env.get_string(&custom_client_config) {
             if !custom_client_config.is_empty() {
                 let custom_client_config: String = custom_client_config.into();
