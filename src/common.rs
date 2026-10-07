@@ -2380,10 +2380,10 @@ pub fn load_custom_client() {
     }
 }
 
-// RIQX build: our server and key are forced; quality and transport are defaults
-// the user can still change. UDP punch is on because upstream turns it off for
-// any server other than rustdesk.com. WebRTC stays off: OSS hbbs 1.1.16 has no
-// KeyExchange, so the attempt would only delay the connection.
+// RIQX build: our server and key are forced; quality settings are defaults the
+// user can still change. UDP/IPv6 punch and WebRTC stay off: OSS hbbs 1.1.16
+// drops udp_port and socket_addr_v6 from PunchHole and has no KeyExchange, so
+// they would only delay the connection.
 fn load_riqx_client_defaults() {
     const SERVER: &str = "rd.riqx.one";
     const KEY: &str = "r0NgbtJBoOlBISTu4rs74euetgetqVF67DgF7A4TYhs=";
@@ -2399,19 +2399,20 @@ fn load_riqx_client_defaults() {
             (keys::OPTION_CUSTOM_RENDEZVOUS_SERVER, SERVER),
             (keys::OPTION_RELAY_SERVER, SERVER),
             (keys::OPTION_KEY, KEY),
+            // An upstream update would replace this build and drop the server above.
+            (keys::OPTION_ALLOW_AUTO_UPDATE, "N"),
         ],
     );
     insert(
         &config::OVERWRITE_LOCAL_SETTINGS,
-        // An upstream update would replace this build and drop the server above.
         &[(keys::OPTION_ENABLE_CHECK_UPDATE, "N")],
     );
     insert(
         &config::DEFAULT_LOCAL_SETTINGS,
         &[
             (keys::OPTION_ENABLE_TCP_PUNCH, "Y"),
-            (keys::OPTION_ENABLE_UDP_PUNCH, "Y"),
-            (keys::OPTION_ENABLE_IPV6_PUNCH, "Y"),
+            (keys::OPTION_ENABLE_UDP_PUNCH, "N"),
+            (keys::OPTION_ENABLE_IPV6_PUNCH, "N"),
             (keys::OPTION_ENABLE_WEBRTC, "N"),
         ],
     );
