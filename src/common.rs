@@ -2437,6 +2437,29 @@ fn load_riqx_client_defaults() {
     );
 }
 
+// RIQX build: a peer saved by an earlier client keeps "balanced" at 30 fps, so
+// the defaults above never reach it. Upgrade such a peer once; the marker keeps
+// a later deliberate choice of "balanced" from being overridden again.
+pub fn riqx_upgrade_peer_quality(id: &str, mut config: config::PeerConfig) -> config::PeerConfig {
+    const MARKER: &str = "riqx-quality-v1";
+    let fps = config.options.get(keys::OPTION_CUSTOM_FPS).map(String::as_str);
+    if config.options.contains_key(MARKER)
+        || config.image_quality != "balanced"
+        || fps == Some("60")
+    {
+        return config;
+    }
+    config.image_quality = "custom".to_owned();
+    config.custom_image_quality = vec![150];
+    config
+        .options
+        .insert(keys::OPTION_CUSTOM_FPS.to_owned(), "60".to_owned());
+    config.options.insert(MARKER.to_owned(), "Y".to_owned());
+    config.store(id);
+    log::info!("upgraded saved image quality of peer {id} to custom 150%/60fps");
+    config
+}
+
 fn read_custom_client_advanced_settings(
     settings: serde_json::Value,
     map_display_settings: &HashMap<String, &&str>,

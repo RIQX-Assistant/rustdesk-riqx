@@ -2974,7 +2974,7 @@ impl LoginConfigHandler {
 
         self.id = id;
         self.conn_type = conn_type;
-        let config = self.load_config();
+        let config = crate::common::riqx_upgrade_peer_quality(&self.id, self.load_config());
         self.remember = !config.password.is_empty();
         self.config = config;
 
