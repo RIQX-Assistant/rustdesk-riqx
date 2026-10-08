@@ -2438,16 +2438,30 @@ fn load_riqx_client_defaults() {
     );
 }
 
-// RIQX build: a peer saved by an earlier client keeps "balanced" at 30 fps, so
-// the defaults above never reach it. Upgrade such a peer once; the marker keeps
-// a later deliberate choice of "balanced" from being overridden again.
+// RIQX build: a peer saved by an earlier client keeps its old quality, so the
+// defaults above never reach it. Move every peer to custom 150%/60 fps once;
+// the marker keeps whatever the user picks afterwards. v1 is the marker of the
+// narrower r3 upgrade, which already did this for the peers it touched.
+const RIQX_QUALITY_MARKERS: [&str; 2] = ["riqx-quality-v1", "riqx-quality-v2"];
+
+fn riqx_has_quality_marker(config: &config::PeerConfig) -> bool {
+    RIQX_QUALITY_MARKERS
+        .iter()
+        .any(|m| config.options.contains_key(*m))
+}
+
 pub fn riqx_upgrade_peer_quality(id: &str, mut config: config::PeerConfig) -> config::PeerConfig {
-    const MARKER: &str = "riqx-quality-v1";
+    if riqx_has_quality_marker(&config) {
+        return config;
+    }
     let fps = config.options.get(keys::OPTION_CUSTOM_FPS).map(String::as_str);
-    if config.options.contains_key(MARKER)
-        || config.image_quality != "balanced"
-        || fps == Some("60")
-    {
+    let up_to_date = config.image_quality == "custom"
+        && config.custom_image_quality == vec![150]
+        && fps == Some("60");
+    if up_to_date {
+        // A new peer already has these values from the defaults; storing now
+        // would create its file before the connection succeeds.
+        // riqx_mark_peer_quality() adds the marker when the peer is saved.
         return config;
     }
     config.image_quality = "custom".to_owned();
@@ -2455,10 +2469,20 @@ pub fn riqx_upgrade_peer_quality(id: &str, mut config: config::PeerConfig) -> co
     config
         .options
         .insert(keys::OPTION_CUSTOM_FPS.to_owned(), "60".to_owned());
-    config.options.insert(MARKER.to_owned(), "Y".to_owned());
+    config
+        .options
+        .insert(RIQX_QUALITY_MARKERS[1].to_owned(), "Y".to_owned());
     config.store(id);
     log::info!("upgraded saved image quality of peer {id} to custom 150%/60fps");
     config
+}
+
+pub fn riqx_mark_peer_quality(config: &mut config::PeerConfig) {
+    if !riqx_has_quality_marker(config) {
+        config
+            .options
+            .insert(RIQX_QUALITY_MARKERS[1].to_owned(), "Y".to_owned());
+    }
 }
 
 fn read_custom_client_advanced_settings(

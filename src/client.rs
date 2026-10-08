@@ -3689,6 +3689,7 @@ impl LoginConfigHandler {
             platform: pi.platform.clone(),
         };
         let mut config = self.load_config();
+        crate::common::riqx_mark_peer_quality(&mut config);
         config.info = serde;
         let password = self.password.clone();
         let password0 = config.password.clone();
