@@ -421,6 +421,7 @@ class _ConnectionPageState extends State<ConnectionPage>
                           focusNode: fieldFocusNode,
                           style: const TextStyle(
                             fontFamily: 'WorkSans',
+                            fontFamilyFallback: [MyTheme.riqxPersianFont],
                             fontSize: 22,
                             height: 1.4,
                           ),

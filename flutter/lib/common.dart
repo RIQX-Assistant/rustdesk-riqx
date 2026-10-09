@@ -371,10 +371,24 @@ class MyTheme {
     }),
   );
 
+  // RIQX: Persian/Arabic script is Vazirmatn in every language (assets/fonts,
+  // a script-only cut). Latin falls through to the platform's own UI font, so
+  // only Persian text changes.
+  static const String riqxPersianFont = 'VazirmatnArabic';
+  static List<String> riqxFontFallback() {
+    final t = Typography.material2014(platform: defaultTargetPlatform).black;
+    return <String>{
+      for (final s in [t.bodyMedium, t.titleMedium, t.headlineMedium, t.displayLarge])
+        if (s?.fontFamily != null) s!.fontFamily!,
+    }.toList();
+  }
+
   static ThemeData lightTheme = ThemeData(
     // https://stackoverflow.com/questions/77537315/after-upgrading-to-flutter-3-16-the-app-bar-background-color-button-size-and
     useMaterial3: false,
     brightness: Brightness.light,
+    fontFamily: riqxPersianFont,
+    fontFamilyFallback: riqxFontFallback(),
     hoverColor: Color.fromARGB(255, 224, 224, 224),
     scaffoldBackgroundColor: Colors.white,
     dialogBackgroundColor: Colors.white,
@@ -473,6 +487,8 @@ class MyTheme {
   static ThemeData darkTheme = ThemeData(
     useMaterial3: false,
     brightness: Brightness.dark,
+    fontFamily: riqxPersianFont,
+    fontFamilyFallback: riqxFontFallback(),
     hoverColor: Color.fromARGB(255, 45, 46, 53),
     scaffoldBackgroundColor: Color(0xFF18191E),
     dialogBackgroundColor: Color(0xFF18191E),

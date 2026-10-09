@@ -232,6 +232,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
                         },
                         style: const TextStyle(
                           fontFamily: 'WorkSans',
+                          fontFamilyFallback: [MyTheme.riqxPersianFont],
                           fontWeight: FontWeight.bold,
                           fontSize: 30,
                           color: MyTheme.idColor,

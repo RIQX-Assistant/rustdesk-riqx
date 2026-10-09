@@ -177,6 +177,20 @@ flutter:
     - family: More
       fonts:
         - asset: assets/more.ttf
+    # RIQX: Persian/Arabic script only, cut from Vazirmatn 33.0.3 (OFL,
+    # assets/fonts/Vazirmatn-OFL.txt). Latin falls through to the platform font.
+    - family: VazirmatnArabic
+      fonts:
+        - asset: assets/fonts/VazirmatnArabic-Light.ttf
+          weight: 300
+        - asset: assets/fonts/VazirmatnArabic-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/VazirmatnArabic-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/VazirmatnArabic-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/VazirmatnArabic-Bold.ttf
+          weight: 700
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
