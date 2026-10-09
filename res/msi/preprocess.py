@@ -96,6 +96,12 @@ def make_parser():
         default="Purslane Tech Pte. Ltd.",
         help="The app manufacturer.",
     )
+    parser.add_argument(
+        "--remove-app-name",
+        action="append",
+        default=[],
+        help="Uninstall the MSI built under this app name before installing, e.g. RustDesk.",
+    )
     return parser
 
 
@@ -295,6 +301,30 @@ def gen_upgrade_info():
 
         for i, line in enumerate(to_insert_lines):
             lines.insert(index_start + i + 1, line)
+        return lines
+
+    return gen_content_between_tags(
+        "Package/Fragments/Upgrades.wxs",
+        "<!--$UpgradeStart$-->",
+        "<!--$UpgradeEnd$-->",
+        func,
+    )
+
+
+def gen_remove_other_products(app_names):
+    # Another app name gives another UpgradeCode, so MajorUpgrade alone would
+    # leave the old product (and its service, with the same device ID) installed.
+    def func(lines, index_start):
+        indent = g_indent_unit * 3
+        for i, name in enumerate(app_names):
+            code = uuid.uuid5(uuid.NAMESPACE_OID, name + ".exe")
+            block = [
+                f'{indent}<Upgrade Id="{code}">\n',
+                f'{indent}{g_indent_unit}<UpgradeVersion Property="REMOVE_OTHER_PRODUCT_{i}" Minimum="0.0.0" IncludeMinimum="yes" OnlyDetect="no" IgnoreRemoveFailure="no" />\n',
+                f"{indent}</Upgrade>\n",
+            ]
+            for line in reversed(block):
+                lines.insert(index_start + 1, line)
         return lines
 
     return gen_content_between_tags(
@@ -548,6 +578,9 @@ if __name__ == "__main__":
         replace_component_guids_in_wxs()
 
     if not gen_upgrade_info():
+        sys.exit(-1)
+
+    if args.remove_app_name and not gen_remove_other_products(args.remove_app_name):
         sys.exit(-1)
 
     if not gen_custom_ARPSYSTEMCOMPONENT(args, dist_dir):

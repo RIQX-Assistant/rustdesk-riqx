@@ -7,6 +7,8 @@ fn main() {}
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 1 && args[1] == "--write-plists" {
+        // RIQX build: the plist names come from the app name set here.
+        crate::common::load_custom_client();
         if let Err(e) = librustdesk::platform::write_plists() {
             eprintln!("Failed to write plists: {}", e);
             std::process::exit(1);

@@ -2385,6 +2385,7 @@ pub fn load_custom_client() {
 // drops udp_port and socket_addr_v6 from PunchHole and has no KeyExchange, so
 // they would only delay the connection.
 fn load_riqx_client_defaults() {
+    riqx_rename_app();
     const SERVER: &str = "rd.riqx.one";
     const KEY: &str = "r0NgbtJBoOlBISTu4rs74euetgetqVF67DgF7A4TYhs=";
     fn insert(map: &std::sync::RwLock<HashMap<String, String>>, kv: &[(&str, &str)]) {
@@ -2407,6 +2408,11 @@ fn load_riqx_client_defaults() {
     insert(
         &config::OVERWRITE_LOCAL_SETTINGS,
         &[(keys::OPTION_ENABLE_CHECK_UPDATE, "N")],
+    );
+    // With a custom app name the home page links "Powered by RustDesk".
+    insert(
+        &config::BUILTIN_SETTINGS,
+        &[(keys::OPTION_HIDE_POWERED_BY_ME, "Y")],
     );
     insert(
         &config::DEFAULT_LOCAL_SETTINGS,
@@ -2436,6 +2442,75 @@ fn load_riqx_client_defaults() {
             (keys::OPTION_CODEC_PREFERENCE, "auto"),
         ],
     );
+}
+
+// RIQX build: earlier builds ran as "RustDesk", and the ID, key pair and
+// password live in files named after the app. Copy them once, before any
+// config static is loaded; the main file goes last so an interrupted copy is
+// retried on the next start. Each process migrates its own profile (the
+// Windows service its LocalService profile, the UI the user's %APPDATA%).
+fn riqx_rename_app() {
+    const OLD_NAME: &str = "RustDesk";
+    const NEW_NAME: &str = "RIQX";
+    if *config::APP_NAME.read().unwrap() != OLD_NAME {
+        return;
+    }
+    let old_dir = config::Config::path("");
+    *config::APP_NAME.write().unwrap() = NEW_NAME.to_owned();
+    let new_dir = config::Config::path("");
+    if let Err(err) = riqx_migrate_config(&old_dir, &new_dir, OLD_NAME, NEW_NAME) {
+        log::error!("Failed to migrate {OLD_NAME} config: {err}");
+    }
+}
+
+fn riqx_migrate_config(
+    old_dir: &std::path::Path,
+    new_dir: &std::path::Path,
+    old_name: &str,
+    new_name: &str,
+) -> std::io::Result<()> {
+    let old_main_name = format!("{old_name}.toml");
+    let old_main = old_dir.join(&old_main_name);
+    let new_main = new_dir.join(format!("{new_name}.toml"));
+    if new_main.exists() || !old_main.is_file() {
+        return Ok(());
+    }
+    std::fs::create_dir_all(new_dir)?;
+    if old_dir != new_dir {
+        riqx_copy_missing_files(&old_dir.join("peers"), &new_dir.join("peers"))?;
+    }
+    for entry in std::fs::read_dir(old_dir)? {
+        let entry = entry?;
+        let file_name = entry.file_name();
+        let Some(name) = file_name.to_str() else {
+            continue;
+        };
+        if name == old_main_name || !name.starts_with(old_name) || !entry.file_type()?.is_file() {
+            continue;
+        }
+        let target = new_dir.join(format!("{new_name}{}", &name[old_name.len()..]));
+        if !target.exists() {
+            std::fs::copy(entry.path(), target)?;
+        }
+    }
+    std::fs::copy(&old_main, &new_main)?;
+    log::info!("Migrated config from {old_dir:?} to {new_dir:?}");
+    Ok(())
+}
+
+fn riqx_copy_missing_files(from: &std::path::Path, to: &std::path::Path) -> std::io::Result<()> {
+    if !from.is_dir() {
+        return Ok(());
+    }
+    std::fs::create_dir_all(to)?;
+    for entry in std::fs::read_dir(from)? {
+        let entry = entry?;
+        let target = to.join(entry.file_name());
+        if entry.file_type()?.is_file() && !target.exists() {
+            std::fs::copy(entry.path(), target)?;
+        }
+    }
+    Ok(())
 }
 
 // RIQX build: a peer saved by an earlier client keeps its old quality, so the
