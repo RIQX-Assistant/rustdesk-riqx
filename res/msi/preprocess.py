@@ -327,12 +327,25 @@ def gen_remove_other_products(app_names):
                 lines.insert(index_start + 1, line)
         return lines
 
-    return gen_content_between_tags(
+    if not gen_content_between_tags(
         "Package/Fragments/Upgrades.wxs",
         "<!--$UpgradeStart$-->",
         "<!--$UpgradeEnd$-->",
         func,
-    )
+    ):
+        return False
+
+    # Upgrades.wxs is a fragment that WiX only links when something references
+    # it; upstream leaves that reference commented out.
+    package = Path(sys.argv[0]).parent.joinpath("Package/Package.wxs")
+    text = package.read_text(encoding="utf-8")
+    ref = '<PropertyRef Id="UpgradesFile" />'
+    if f"<!--{ref}-->" in text:
+        package.write_text(text.replace(f"<!--{ref}-->", ref), encoding="utf-8")
+    elif ref not in text:
+        print(f"{package}: no {ref} to enable")
+        return False
+    return True
 
 
 def gen_custom_dialog_bitmaps():
