@@ -16,6 +16,7 @@ import 'package:flutter_hbb/desktop/widgets/update_progress.dart';
 import 'package:flutter_hbb/models/platform_model.dart';
 import 'package:flutter_hbb/models/server_model.dart';
 import 'package:flutter_hbb/models/state_model.dart';
+import 'package:flutter_hbb/riqx/ads.dart';
 import 'package:flutter_hbb/utils/multi_window_manager.dart';
 import 'package:flutter_hbb/utils/platform_channel.dart';
 import 'package:get/get.dart';
@@ -142,7 +143,13 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     children: children,
                   ),
                 ),
-                Expanded(child: Container())
+                // RIQX: ADS1 at the bottom of the left column.
+                Expanded(
+                    child: const RiqxAdSlot(
+                            slot: 'ads1',
+                            fallbackAspect: 3 / 4,
+                            alignment: Alignment.bottomCenter)
+                        .paddingOnly(left: 12, right: 12, bottom: 12, top: 8))
               ],
             ),
             if (isOutgoingOnly)

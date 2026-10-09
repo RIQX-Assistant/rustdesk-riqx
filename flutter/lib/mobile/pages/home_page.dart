@@ -7,6 +7,7 @@ import '../../common.dart';
 import '../../common/widgets/chat_page.dart';
 import '../../models/platform_model.dart';
 import '../../models/state_model.dart';
+import '../../riqx/ads.dart';
 import 'connection_page.dart';
 
 abstract class PageShape extends Widget {
@@ -102,7 +103,12 @@ class HomePageState extends State<HomePage> {
               }
             }),
           ),
-          body: _pages.elementAt(_selectedIndex),
+          // RIQX: ADS2 as a bottom banner on every tab.
+          body: Column(children: [
+            Expanded(child: _pages.elementAt(_selectedIndex)),
+            const RiqxAdSlot(slot: 'ads2', fallbackAspect: 6, maxHeight: 96)
+                .paddingSymmetric(horizontal: 8, vertical: 4),
+          ]),
         ));
   }
 

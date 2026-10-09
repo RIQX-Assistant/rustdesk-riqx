@@ -45,6 +45,11 @@ dependencies:
   settings_ui: ^2.0.2
   flutter_breadcrumb: ^1.0.1
   http: ^1.1.0
+  # RIQX ads (lib/riqx/ads.dart): SHA-256 checks and MP4/WebM playback.
+  crypto: ^3.0.6
+  media_kit: ^1.1.11
+  media_kit_video: ^1.2.5
+  media_kit_libs_video: ^1.0.5
   qr_code_scanner: ^1.0.0
   zxing2: ^0.2.0
   image_picker: ^1.1.2
