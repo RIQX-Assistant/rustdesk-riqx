@@ -2386,24 +2386,42 @@ pub fn load_custom_client() {
 // they would only delay the connection.
 fn load_riqx_client_defaults() {
     riqx_rename_app();
-    const SERVER: &str = "rd.riqx.one";
-    const KEY: &str = "r0NgbtJBoOlBISTu4rs74euetgetqVF67DgF7A4TYhs=";
+    // Server, key and API come from the build (GitHub secrets RIQX_SERVER,
+    // RIQX_KEY, RIQX_API), not from this public source. A build without them
+    // is a plain client with no server forced.
+    const SERVER: &str = match option_env!("RIQX_SERVER") {
+        Some(v) => v,
+        None => "",
+    };
+    const KEY: &str = match option_env!("RIQX_KEY") {
+        Some(v) => v,
+        None => "",
+    };
+    const API: &str = match option_env!("RIQX_API") {
+        Some(v) => v,
+        None => "",
+    };
     fn insert(map: &std::sync::RwLock<HashMap<String, String>>, kv: &[(&str, &str)]) {
         let mut map = map.write().unwrap();
         for (k, v) in kv {
             map.insert(k.to_string(), v.to_string());
         }
     }
+    if !SERVER.is_empty() {
+        insert(
+            &config::OVERWRITE_SETTINGS,
+            &[
+                (keys::OPTION_CUSTOM_RENDEZVOUS_SERVER, SERVER),
+                (keys::OPTION_RELAY_SERVER, SERVER),
+                (keys::OPTION_KEY, KEY),
+                (keys::OPTION_API_SERVER, API),
+            ],
+        );
+    }
     insert(
         &config::OVERWRITE_SETTINGS,
-        &[
-            (keys::OPTION_CUSTOM_RENDEZVOUS_SERVER, SERVER),
-            (keys::OPTION_RELAY_SERVER, SERVER),
-            (keys::OPTION_KEY, KEY),
-            (keys::OPTION_API_SERVER, "https://prd.riqx.one:8443"),
-            // An upstream update would replace this build and drop the server above.
-            (keys::OPTION_ALLOW_AUTO_UPDATE, "N"),
-        ],
+        // An upstream update would replace this build and drop the server above.
+        &[(keys::OPTION_ALLOW_AUTO_UPDATE, "N")],
     );
     insert(
         &config::OVERWRITE_LOCAL_SETTINGS,

@@ -35,6 +35,10 @@ env:
   # for arm64 linux because official Dart SDK does not work
   FLUTTER_ELINUX_VERSION: "3.16.9"
   TAG_NAME: "${{ inputs.upload-tag }}"
+  # RIQX server settings, baked into the client at compile time (src/common.rs).
+  RIQX_SERVER: ${{ secrets.RIQX_SERVER }}
+  RIQX_KEY: ${{ secrets.RIQX_KEY }}
+  RIQX_API: ${{ secrets.RIQX_API }}
   VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
   # vcpkg version: 2026.07.29
   # If we change the `VCPKG COMMIT_ID`, please remember:
