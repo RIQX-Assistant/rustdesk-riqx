@@ -6,6 +6,7 @@
 // start, every poll_seconds and when the window is activated, download each
 // file once, check its SHA-256, keep it in a local cache (capped), and show an
 // ad only after its file is complete. Offline, the last manifest is shown.
+// Images, GIF and animated WebP only: video ads are converted by the console.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -13,8 +14,6 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
@@ -46,6 +45,10 @@ class RiqxAdItem {
     if (url is! String || sha is! String || !RegExp(r'^[0-9a-f]{64}$').hasMatch(sha)) {
       return null;
     }
+    // No video playback in the app: libmpv (media_kit) deadlocked the window
+    // on Windows. The console now converts video ads to animated WebP; any
+    // 'video' item from an older console is skipped.
+    if (j['type'] == 'video') return null;
     final ext = Uri.parse(url).path.split('.').last.toLowerCase();
     if (!RegExp(r'^[a-z0-9]{2,5}$').hasMatch(ext)) return null;
     return RiqxAdItem._(
@@ -61,8 +64,6 @@ class RiqxAdItem {
       File('${dir.path}${Platform.pathSeparator}$sha.$ext'),
     );
   }
-
-  bool get isVideo => type == 'video';
 
   double? get aspect =>
       (width != null && height != null && height! > 0) ? width! / height! : null;
@@ -248,13 +249,8 @@ class RiqxAdSlot extends StatefulWidget {
 
 class _RiqxAdSlotState extends State<RiqxAdSlot>
     with WindowListener, WidgetsBindingObserver {
-  static bool _mediaKitReady = false;
-
   int _index = 0;
   Timer? _timer;
-  Player? _player;
-  VideoController? _video;
-  StreamSubscription? _completed;
   String? _shownKey;
 
   @override
@@ -279,7 +275,6 @@ class _RiqxAdSlotState extends State<RiqxAdSlot>
       WidgetsBinding.instance.removeObserver(this);
     }
     _timer?.cancel();
-    _disposeVideo();
     super.dispose();
   }
 
@@ -297,7 +292,6 @@ class _RiqxAdSlotState extends State<RiqxAdSlot>
     final items = _items;
     if (items.isEmpty) {
       _timer?.cancel();
-      _disposeVideo();
       if (mounted) setState(() => _shownKey = null);
       return;
     }
@@ -313,28 +307,8 @@ class _RiqxAdSlotState extends State<RiqxAdSlot>
     if (key == _shownKey) return;
     _shownKey = key;
     _timer?.cancel();
-    _disposeVideo();
 
-    if (item.isVideo) {
-      try {
-        if (!_mediaKitReady) {
-          MediaKit.ensureInitialized();
-          _mediaKitReady = true;
-        }
-        final player = Player();
-        _player = player;
-        _video = VideoController(player);
-        player.setVolume(0);
-        player.setPlaylistMode(items.length == 1 ? PlaylistMode.single : PlaylistMode.none);
-        _completed = player.stream.completed.listen((done) {
-          if (done && items.length > 1) _next();
-        });
-        player.open(Media(item.file.uri.toString()));
-      } catch (e) {
-        debugPrint('riqx ads: video failed: $e');
-        _timer = Timer(const Duration(seconds: 2), _next);
-      }
-    } else if (items.length > 1) {
+    if (items.length > 1) {
       _timer = Timer(Duration(milliseconds: item.durationMs.clamp(3000, 300000)), _next);
     }
     if (mounted) setState(() {});
@@ -347,14 +321,6 @@ class _RiqxAdSlotState extends State<RiqxAdSlot>
     _show();
   }
 
-  void _disposeVideo() {
-    _completed?.cancel();
-    _completed = null;
-    _player?.dispose();
-    _player = null;
-    _video = null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final items = _items;
@@ -362,13 +328,12 @@ class _RiqxAdSlotState extends State<RiqxAdSlot>
     final item = items[_index % items.length];
     final aspect = item.aspect ?? widget.fallbackAspect;
 
-    final Widget media = item.isVideo && _video != null
-        ? Video(controller: _video!, controls: NoVideoControls, fill: Colors.transparent)
-        : Image.file(item.file,
-            key: ValueKey(item.file.path),
-            fit: BoxFit.contain,
-            gaplessPlayback: true,
-            errorBuilder: (_, __, ___) => const SizedBox.shrink());
+    // Image.file also animates GIF and animated WebP (video ads arrive as those).
+    final Widget media = Image.file(item.file,
+        key: ValueKey(item.file.path),
+        fit: BoxFit.contain,
+        gaplessPlayback: true,
+        errorBuilder: (_, __, ___) => const SizedBox.shrink());
 
     Widget child = ClipRRect(
       borderRadius: BorderRadius.circular(10),
