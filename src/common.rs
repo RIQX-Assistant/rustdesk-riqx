@@ -2756,8 +2756,8 @@ pub fn get_builtin_option(key: &str) -> String {
 }
 
 #[inline]
-/// RIQX: "1.5.0-r6.3", from the tag the build was started with (riqx-1.5.0-r6.3,
-/// or riqx-1.5.0-r6.3-mobile-mac). Empty in a local build, which then never
+/// RIQX: "1.5.1", from the tag the build was started with (riqx-1.5.1, or
+/// riqx-1.5.1-mobile-mac). Empty in a local build, which then never
 /// offers an update (docs/12-app-update.md).
 pub fn riqx_version() -> String {
     const TAG: &str = match option_env!("TAG_NAME") {

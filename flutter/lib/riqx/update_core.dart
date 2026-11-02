@@ -7,11 +7,13 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-final _kVersion = RegExp(r'^\d+\.\d+\.\d+-r\d+(\.\d+)*$');
+// 1.5.1 from now on; 1.5.0-r6.5 is what the first builds were called.
+final _kVersion = RegExp(r'^\d+\.\d+\.\d+(-r\d+(\.\d+)*)?$');
 
 bool riqxIsVersion(String v) => _kVersion.hasMatch(v);
 
-/// -1 / 0 / 1 by number, not by text: «1.5.0-r6.10» > «1.5.0-r6.2» > «1.5.0-r6».
+/// -1 / 0 / 1 by number, not by text: «1.5.10» > «1.5.2» > «1.5.0-r6.5».
+/// «1.5.0-r6.10» > «1.5.0-r6.2» > «1.5.0-r6» still holds for the first builds.
 int riqxCompareVersions(String a, String b) {
   List<int> parts(String v) =>
       RegExp(r'\d+').allMatches(v).map((m) => int.parse(m.group(0)!)).toList();

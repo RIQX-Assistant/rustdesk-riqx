@@ -8,7 +8,7 @@ on:
         default: true
       upload-tag:
         type: string
-        default: "riqx-1.5.0"
+        default: "riqx-1.5.1"
 
 # NOTE: F-Droid builder script 'flutter/build_fdroid.sh' reads environment
 # variables from this workflow!
@@ -49,7 +49,7 @@ env:
   VCPKG_COMMIT_ID: "9e593bb18ea69cc5095e012465dcd675a822ed0d"
   VCPKG_CMAKE_VERSION: "4.3.0"
   ARMV7_VCPKG_COMMIT_ID: "6f29f12e82a8293156836ad81cc9bf5af41fe836" # 2025.01.13, got "/opt/artifacts/vcpkg/vcpkg: No such file or directory" with latest version
-  VERSION: "1.5.0"
+  VERSION: "1.5.1"
   NDK_VERSION: "r28c"
   #signing keys env variable checks
   ANDROID_SIGNING_KEY: "${{ secrets.ANDROID_SIGNING_KEY }}"
@@ -61,13 +61,23 @@ jobs:
   check-tag:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: The app takes its version from this tag (docs/12-app-update.md)
         shell: bash
         run: |
-          if [[ ! "$TAG_NAME" =~ ^riqx-[0-9]+\.[0-9]+\.[0-9]+-r[0-9]+(\.[0-9]+)*$ ]]; then
-            echo "::error::upload-tag must look like riqx-1.5.0-r6.3, got: $TAG_NAME"
+          if [[ "$TAG_NAME" != "riqx-$VERSION" ]]; then
+            echo "::error::upload-tag must be riqx-$VERSION, got: $TAG_NAME"
             exit 1
           fi
+          # scripts/bump_app_version.py keeps these together; About shows Cargo's.
+          grep -q "^version = \"$VERSION\"" Cargo.toml libs/portable/Cargo.toml || {
+            echo "::error::Cargo.toml is not at $VERSION"
+            exit 1
+          }
+          grep -q "^version: $VERSION+" flutter/pubspec.yaml || {
+            echo "::error::flutter/pubspec.yaml is not at $VERSION"
+            exit 1
+          }
 
   generate-bridge:
     needs: [check-tag]

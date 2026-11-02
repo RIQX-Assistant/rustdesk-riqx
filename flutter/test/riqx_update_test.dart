@@ -20,13 +20,19 @@ void main() {
     expect(riqxCompareVersions('1.5.0-r6', '1.5.0-r6.0'), 0);
     expect(riqxCompareVersions('1.5.0-r10', '1.5.0-r9.9'), 1);
     expect(riqxCompareVersions('1.6.0-r1', '1.5.0-r9'), 1);
+    expect(riqxCompareVersions('1.5.1', '1.5.0-r6.5'), 1);
+    expect(riqxCompareVersions('1.5.2', '1.5.1'), 1);
+    expect(riqxCompareVersions('1.5.10', '1.5.9'), 1);
+    expect(riqxCompareVersions('1.5.1', '1.5.1'), 0);
+    expect(riqxCompareVersions('1.5.0-r6.5', '1.5.1'), -1);
   });
 
   test('only a tagged build has a version of its own', () {
     expect(riqxIsVersion('1.5.0-r6.3'), isTrue);
     expect(riqxIsVersion('1.5.0-r7'), isTrue);
+    expect(riqxIsVersion('1.5.1'), isTrue);
     expect(riqxIsVersion(''), isFalse);
-    expect(riqxIsVersion('1.5.0'), isFalse);
+    expect(riqxIsVersion('1.5'), isFalse);
     expect(riqxIsVersion('1.5.0-r6.3-mobile-mac'), isFalse);
     expect(riqxIsVersion('riqx-1.5.0'), isFalse);
   });
@@ -58,6 +64,14 @@ void main() {
     ];
     RiqxUpdateFile? win(String current) => riqxPickFile(files,
         current: current, platform: 'windows', archs: ['x86_64'], ext: 'msi');
+
+    test('the old numbering is offered a version under the new one', () {
+      final next = [file('1.5.1', 'windows', 'x86_64', 'msi', id: 9)];
+      RiqxUpdateFile? from(String current) => riqxPickFile(next,
+          current: current, platform: 'windows', archs: ['x86_64'], ext: 'msi');
+      expect(from('1.5.0-r6.5')!.id, 9);
+      expect(from('1.5.1'), isNull);
+    });
 
     test('newer: the MSI; same or newer installed: nothing', () {
       expect(win('1.5.0-r6.2')!.id, 1);
