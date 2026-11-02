@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- RIQX: the one folder Android's installer may read a downloaded update from. -->
+<paths>
+    <cache-path name="riqx_update" path="riqx_update/"/>
+</paths>

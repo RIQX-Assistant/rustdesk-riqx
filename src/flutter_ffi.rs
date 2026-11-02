@@ -2714,6 +2714,19 @@ pub fn main_get_common(key: String) -> String {
         };
         #[cfg(not(target_os = "linux"))]
         return String::new();
+    } else if key == "riqx-version" {
+        return crate::common::riqx_version();
+    } else if key == "riqx-msi-installed" {
+        #[cfg(target_os = "windows")]
+        return crate::platform::is_msi_installed()
+            .unwrap_or(false)
+            .to_string();
+        #[cfg(not(target_os = "windows"))]
+        return false.to_string();
+    } else if let Some(args) = key.strip_prefix("riqx-verify-update:") {
+        let args: Vec<&str> = args.splitn(3, ':').collect();
+        return (args.len() == 3 && crate::common::riqx_verify_update(args[0], args[1], args[2]))
+            .to_string();
     } else if key == "permanent-password-set" {
         return ui_interface::is_permanent_password_set().to_string();
     } else if key == "local-permanent-password-set" {

@@ -2756,6 +2756,39 @@ pub fn get_builtin_option(key: &str) -> String {
 }
 
 #[inline]
+/// RIQX: "1.5.0-r6.3", from the tag the build was started with (riqx-1.5.0-r6.3,
+/// or riqx-1.5.0-r6.3-mobile-mac). Empty in a local build, which then never
+/// offers an update (docs/12-app-update.md).
+pub fn riqx_version() -> String {
+    const TAG: &str = match option_env!("TAG_NAME") {
+        Some(v) => v,
+        None => "",
+    };
+    TAG.strip_prefix("riqx-")
+        .unwrap_or_default()
+        .trim_end_matches("-mobile-mac")
+        .to_owned()
+}
+
+/// RIQX: true only for a valid Ed25519 signature of a Windows installer, made by
+/// scripts/publish_client_downloads.py with a key that never leaves the build
+/// machine. The version is in the message, so an old signed installer cannot be
+/// served as a new one.
+pub fn riqx_verify_update(version: &str, sha256: &str, signature: &str) -> bool {
+    const KEY: &str = "tcZ5YFleez25TQsEREr4r7ORDg984tfYn7tnWroMQ4Y=";
+    let (Ok(key), Ok(mut signed)) = (crate::decode64(KEY), crate::decode64(signature)) else {
+        return false;
+    };
+    let Some(key) = get_pk(&key).map(|x| sign::PublicKey(x)) else {
+        return false;
+    };
+    if signed.len() != sign::SIGNATUREBYTES {
+        return false;
+    }
+    signed.extend_from_slice(format!("riqx-windows {} {}", version, sha256).as_bytes());
+    sign::verify(&signed, &key).is_ok()
+}
+
 pub fn is_custom_client() -> bool {
     get_app_name() != "RustDesk"
 }

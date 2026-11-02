@@ -27,10 +27,12 @@ import android.media.MediaCodecList
 import android.media.MediaFormat
 import android.net.Uri
 import android.provider.DocumentsContract
+import android.provider.Settings
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import android.util.DisplayMetrics
 import androidx.annotation.RequiresApi
+import androidx.core.content.FileProvider
 import org.json.JSONArray
 import org.json.JSONObject
 import com.hjq.permissions.XXPermissions
@@ -647,10 +649,43 @@ class MainActivity : FlutterActivity() {
                 "on_voice_call_closed" -> {
                     onVoiceCallClosed()
                 }
+                "riqx_install_apk" -> {
+                    result.success(riqxInstallApk(call.argument<String>("path") ?: ""))
+                }
                 else -> {
                     result.error("-1", "No such method", null)
                 }
             }
+        }
+    }
+
+    /**
+     * RIQX: hands a checked APK to Android's install screen: "started",
+     * "permission" (the "install unknown apps" screen opened instead), "missing"
+     * or "failed". Only from the update folder in res/xml/riqx_update_paths.xml.
+     */
+    private fun riqxInstallApk(path: String): String {
+        val file = File(path)
+        val folder = File(cacheDir, "riqx_update")
+        if (!file.isFile || file.parentFile?.canonicalPath != folder.canonicalPath) return "missing"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) {
+            return try {
+                startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")))
+                "permission"
+            } catch (_: Exception) {
+                "failed"
+            }
+        }
+        return try {
+            val uri = FileProvider.getUriForFile(this, "$packageName.riqxupdate", file)
+            startActivity(
+                Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(uri, "application/vnd.android.package-archive")
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            )
+            "started"
+        } catch (_: Exception) {
+            "failed"
         }
     }
 

@@ -8,6 +8,7 @@ import '../../common/widgets/chat_page.dart';
 import '../../models/platform_model.dart';
 import '../../models/state_model.dart';
 import '../../riqx/ads.dart';
+import '../../riqx/update.dart';
 import 'connection_page.dart';
 
 abstract class PageShape extends Widget {
@@ -105,6 +106,8 @@ class HomePageState extends State<HomePage> {
           ),
           // RIQX: ADS2 as a bottom banner on every tab.
           body: Column(children: [
+            // RIQX: a new version, at the top of every tab.
+            const RiqxUpdateStrip(),
             Expanded(child: _pages.elementAt(_selectedIndex)),
             const RiqxAdSlot(slot: 'ads2', fallbackAspect: 6, maxHeight: 96)
                 .paddingSymmetric(horizontal: 8, vertical: 4),
