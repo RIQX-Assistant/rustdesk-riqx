@@ -17,6 +17,7 @@ import 'package:flutter_hbb/models/platform_model.dart';
 import 'package:flutter_hbb/models/server_model.dart';
 import 'package:flutter_hbb/models/state_model.dart';
 import 'package:flutter_hbb/riqx/ads.dart';
+import 'package:flutter_hbb/riqx/links.dart';
 import 'package:flutter_hbb/riqx/update.dart';
 import 'package:flutter_hbb/utils/multi_window_manager.dart';
 import 'package:flutter_hbb/utils/platform_channel.dart';
@@ -497,19 +498,19 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             () async {
           bind.mainIsCanScreenRecording(prompt: true);
           watchIsCanScreenRecording = true;
-        }, help: 'Help', link: translate("doc_mac_permission"));
+        }, help: 'Help', link: '/Help#mac-permissions');
       } else if (!isOutgoingOnly && !bind.mainIsProcessTrusted(prompt: false)) {
         return buildInstallCard("Permissions", "config_acc", "Configure",
             () async {
           bind.mainIsProcessTrusted(prompt: true);
           watchIsProcessTrust = true;
-        }, help: 'Help', link: translate("doc_mac_permission"));
+        }, help: 'Help', link: '/Help#mac-permissions');
       } else if (!bind.mainIsCanInputMonitoring(prompt: false)) {
         return buildInstallCard("Permissions", "config_input", "Configure",
             () async {
           bind.mainIsCanInputMonitoring(prompt: true);
           watchIsInputMonitoring = true;
-        }, help: 'Help', link: translate("doc_mac_permission"));
+        }, help: 'Help', link: '/Help#mac-permissions');
       } else if (!isOutgoingOnly &&
           !svcStopped.value &&
           bind.mainIsInstalled() &&
@@ -678,8 +679,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                           ? <Widget>[
                               Center(
                                   child: InkWell(
-                                      onTap: () async =>
-                                          await launchUrl(Uri.parse(link!)),
+                                      onTap: () async => link!.startsWith('/')
+                                          ? await riqxOpenPanelPage(link)
+                                          : await launchUrl(Uri.parse(link)),
                                       child: Text(
                                         translate(help),
                                         style: TextStyle(

@@ -12,6 +12,17 @@ final _kVersion = RegExp(r'^\d+\.\d+\.\d+(-r\d+(\.\d+)*)?$');
 
 bool riqxIsVersion(String v) => _kVersion.hasMatch(v);
 
+/// A public page of the console. A build with no API setting of its own falls
+/// back on upstream's address, which has no such page: then the RIQX site.
+String riqxPanelPageUrl(String api, String path) {
+  final base = api.trim().replaceAll(RegExp(r'/+$'), '');
+  final host = Uri.tryParse(base)?.host ?? '';
+  if (host.isEmpty || host == 'rustdesk.com' || host.endsWith('.rustdesk.com')) {
+    return 'https://riqx.one';
+  }
+  return '$base$path';
+}
+
 /// -1 / 0 / 1 by number, not by text: «1.5.10» > «1.5.2» > «1.5.0-r6.5».
 /// «1.5.0-r6.10» > «1.5.0-r6.2» > «1.5.0-r6» still holds for the first builds.
 int riqxCompareVersions(String a, String b) {

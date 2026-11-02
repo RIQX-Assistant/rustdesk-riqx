@@ -27,6 +27,16 @@ void main() {
     expect(riqxCompareVersions('1.5.0-r6.5', '1.5.1'), -1);
   });
 
+  test('a console page uses the build\'s API address', () {
+    expect(riqxPanelPageUrl('https://panel.example:8443', '/privacy'),
+        'https://panel.example:8443/privacy');
+    expect(riqxPanelPageUrl(' https://panel.example:8443/ ', '/Help#mac-permissions'),
+        'https://panel.example:8443/Help#mac-permissions');
+    expect(riqxPanelPageUrl('', '/privacy'), 'https://riqx.one');
+    expect(riqxPanelPageUrl('https://admin.rustdesk.com', '/privacy'),
+        'https://riqx.one');
+  });
+
   test('only a tagged build has a version of its own', () {
     expect(riqxIsVersion('1.5.0-r6.3'), isTrue);
     expect(riqxIsVersion('1.5.0-r7'), isTrue);
