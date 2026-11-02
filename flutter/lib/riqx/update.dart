@@ -51,7 +51,7 @@ class RiqxUpdate extends ChangeNotifier {
   RiqxUpdateFile? file;
   _Install _install = _Install.link;
   double? progress; // 0..1 while the file downloads
-  bool preparing = false; // checks and the question between download and install
+  bool preparing = false; // from the press until the download or the install starts
   bool installing = false; // handed to Windows or Android
   bool needsPermission = false; // Android's «install unknown apps» screen opened
   bool dismissed = false;
@@ -191,6 +191,7 @@ class RiqxUpdate extends ChangeNotifier {
     }
     error = null;
     needsPermission = false;
+    preparing = true;
     notifyListeners();
     try {
       final target = await _fetch(f);
@@ -244,8 +245,7 @@ class RiqxUpdate extends ChangeNotifier {
   }
 
   Future<void> _installMsi(RiqxUpdateFile f, File msi) async {
-    preparing = true;
-    notifyListeners();
+    if (!await _confirmInstall(f)) return;
     // Right before it runs, on the bytes that are on disk now.
     final verified = await riqxFileMatches(msi, f.sha256) &&
         bind.mainGetCommonSync(
@@ -260,7 +260,6 @@ class RiqxUpdate extends ChangeNotifier {
           'امضای نسخهٔ تازه درست نیست و نصب نشد؛ آن را از صفحهٔ دانلود بگیرید.',
           'The signature of the new version is not valid, so it was not installed. Please get it from the download page.');
     }
-    if (!await _confirmInstall(f)) return;
     preparing = false;
     installing = true;
     notifyListeners();
@@ -299,15 +298,10 @@ class RiqxUpdate extends ChangeNotifier {
         'The installation failed (code $code). Log: $log');
   }
 
-  Future<bool> _confirmInstall(RiqxUpdateFile f) {
+  Future<bool> _confirmInstall(RiqxUpdateFile f) async {
     final fa = riqxUpdateLangIsFa();
-    final done = Completer<bool>();
-    gFFI.dialogManager.show((setState, close, context) {
-      void answer(bool yes) {
-        if (!done.isCompleted) done.complete(yes);
-        close();
-      }
-
+    // Null when something else dismisses every dialog: that is a «later».
+    final yes = await gFFI.dialogManager.show<bool>((setState, close, context) {
       return CustomAlertDialog(
         title: Text(fa ? 'نصب نسخهٔ تازه' : 'Install the new version'),
         content: Text(fa
@@ -317,13 +311,13 @@ class RiqxUpdate extends ChangeNotifier {
                 'RIQX will close and open again after a few seconds, and any connection you have now will drop. Windows will ask for permission once.'),
         actions: [
           dialogButton(fa ? 'بعداً' : 'Later',
-              onPressed: () => answer(false), isOutline: true),
-          dialogButton(fa ? 'نصب' : 'Install', onPressed: () => answer(true)),
+              onPressed: () => close(false), isOutline: true),
+          dialogButton(fa ? 'نصب' : 'Install', onPressed: () => close(true)),
         ],
-        onCancel: () => answer(false),
+        onCancel: () => close(false),
       );
     });
-    return done.future;
+    return yes == true;
   }
 
   Future<void> _installApk(RiqxUpdateFile f, File apk) async {
@@ -416,9 +410,7 @@ class _RiqxUpdateStripState extends State<RiqxUpdateStrip>
           : 'Downloading the new version: $percent';
     }
     if (u.preparing) {
-      return fa
-          ? 'نسخهٔ تازه دانلود شد؛ در حال آماده‌سازی نصب…'
-          : 'Downloaded. Getting the installation ready…';
+      return fa ? 'در حال آماده‌سازی نصب…' : 'Getting the installation ready…';
     }
     if (u.error != null) return fa ? u.error!.fa : u.error!.en;
     if (u.needsPermission) {

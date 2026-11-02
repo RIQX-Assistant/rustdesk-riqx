@@ -668,11 +668,13 @@ class MainActivity : FlutterActivity() {
         val file = File(path)
         val folder = File(cacheDir, "riqx_update")
         if (!file.isFile || file.parentFile?.canonicalPath != folder.canonicalPath) return "missing"
+        // Android 5 and 6: the installer takes no content:// link.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return "failed"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) {
             return try {
                 startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")))
                 "permission"
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 "failed"
             }
         }
@@ -684,7 +686,7 @@ class MainActivity : FlutterActivity() {
                     .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             )
             "started"
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             "failed"
         }
     }
